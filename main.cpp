@@ -7,6 +7,44 @@ bool drawing = false;
 Point lastPoint;
 Scalar selectedColor(0, 0, 0);
 
+// Calculating the color by coordinates(x, y)
+void getColorFromCoordinates(int x, int y) {
+
+    int radius = 313;
+
+    // Calculating the relative coordinates
+    float X = x - 313;
+    float Y = y - 313;
+
+    // Calculating the distance from the center to the point
+    float distance = std::sqrt(X * X + Y * Y);
+
+    // Check if the point is inside the circle
+    if (distance > radius) {
+        selectedColor = Scalar(255,255,255);
+    }
+
+    // Calculating the angle to a range from 0 to 1
+    const float PI = 3.14;
+    float angle = (std::atan2(Y, X) + PI) / (2 * PI);
+
+    // Converting the radius to a range from 0 to 1
+    float R = distance / radius;
+
+    // Calculating the color on the color wheel
+    int hue = static_cast<int>(angle * 180); 
+
+    // Converting HSV to BGR
+    Mat hsv(1, 1, CV_8UC3);
+    hsv.at<Vec3b>(0, 0)[0] = hue;                       // Angle
+    hsv.at<Vec3b>(0, 0)[1] = static_cast<int>(255 * R); // Saturation
+    hsv.at<Vec3b>(0, 0)[2] = 255;                       // Brightness
+
+    Mat bgr;
+    cvtColor(hsv, bgr, COLOR_HSV2BGR);
+    selectedColor = Scalar(bgr.at<Vec3b>(0, 0)[0], bgr.at<Vec3b>(0, 0)[1], bgr.at<Vec3b>(0, 0)[2]);
+}
+
 // Drawing in photo
 void mouseCallback(int event, int x, int y, int flags, void* userdata) {
     if (event == EVENT_LBUTTONDOWN) {
@@ -26,12 +64,7 @@ void mouseCallback(int event, int x, int y, int flags, void* userdata) {
 // Selecting a color on the gradient color wheel
 void mouseEvent(int event, int x, int y, int flags, void* userdata) {
     if (event == EVENT_LBUTTONDOWN) {
-        Mat* gcw = reinterpret_cast<Mat*>(userdata);
-        uchar r = gcw->data[gcw->channels() * (gcw->cols * y + x) + 2];
-        uchar g = gcw->data[gcw->channels() * (gcw->cols * y + x) + 1];
-        uchar b = gcw->data[gcw->channels() * (gcw->cols * y + x) + 0];
-
-        selectedColor = Scalar(b, g, r);
+        getColorFromCoordinates(x, y);
     }
 }
 
